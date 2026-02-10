@@ -81,13 +81,37 @@ const specError = ref('');
 const specUrlInput = ref(parseSpecUrlFromHash());
 const currentServerUrl = ref(window.location.origin);
 
-function normalizeServerUrl(serverUrl: string | undefined, specSourceUrl: string): string {
+type OpenApiServer = {
+  url?: string;
+  variables?: Record<string, { default?: string }>;
+};
+
+function applyServerVariableDefaults(serverUrl: string, variables: OpenApiServer['variables']): string {
+  if (!variables) return serverUrl;
+
+  return serverUrl.replace(/\{([^}]+)\}/g, (match, variableName) => {
+    const fallback = variables[variableName]?.default;
+    return fallback?.trim() ? fallback : match;
+  });
+}
+
+function normalizeServerUrl(server: OpenApiServer | undefined, specSourceUrl: string): string {
   const fallbackUrl = window.location.origin;
-  const rawServerUrl = serverUrl?.trim();
+  const rawServerUrl = server?.url?.trim();
   if (!rawServerUrl) return fallbackUrl;
 
-  const specBaseUrl = specSourceUrl ? new URL(specSourceUrl, window.location.href).href : fallbackUrl;
-  return new URL(rawServerUrl, specBaseUrl).href;
+  const resolvedServerUrl = applyServerVariableDefaults(rawServerUrl, server?.variables);
+  const hasUnresolvedTemplates = /\{[^}]+\}/.test(resolvedServerUrl);
+  if (hasUnresolvedTemplates) {
+    return fallbackUrl;
+  }
+
+  try {
+    const specBaseUrl = specSourceUrl ? new URL(specSourceUrl, window.location.href).href : fallbackUrl;
+    return new URL(resolvedServerUrl, specBaseUrl).href;
+  } catch {
+    return fallbackUrl;
+  }
 }
 
 watch(
@@ -131,7 +155,7 @@ async function setSpecFromSource(specUrl: string): Promise<void> {
     }
 
     endpoints.value = parsedEndpoints;
-    currentServerUrl.value = normalizeServerUrl(spec.servers?.[0]?.url, specUrl);
+    currentServerUrl.value = normalizeServerUrl(spec.servers?.[0], specUrl);
     resetRequestSelection(parsedEndpoints);
   } catch (error) {
     endpoints.value = [];
