@@ -81,6 +81,15 @@ const specError = ref('');
 const specUrlInput = ref(parseSpecUrlFromHash());
 const currentServerUrl = ref(window.location.origin);
 
+function normalizeServerUrl(serverUrl: string | undefined, specSourceUrl: string): string {
+  const fallbackUrl = window.location.origin;
+  const rawServerUrl = serverUrl?.trim();
+  if (!rawServerUrl) return fallbackUrl;
+
+  const specBaseUrl = specSourceUrl ? new URL(specSourceUrl, window.location.href).href : fallbackUrl;
+  return new URL(rawServerUrl, specBaseUrl).href;
+}
+
 watch(
   requestState,
   (value) => saveStateToHash(value),
@@ -122,7 +131,7 @@ async function setSpecFromSource(specUrl: string): Promise<void> {
     }
 
     endpoints.value = parsedEndpoints;
-    currentServerUrl.value = spec.servers?.[0]?.url ?? window.location.origin;
+    currentServerUrl.value = normalizeServerUrl(spec.servers?.[0]?.url, specUrl);
     resetRequestSelection(parsedEndpoints);
   } catch (error) {
     endpoints.value = [];
