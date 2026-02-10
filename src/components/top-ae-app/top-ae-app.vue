@@ -186,7 +186,7 @@ let controller: AbortController | null = null;
 
 function cleanObject(data: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(data).filter(([, value]) => value !== undefined && value !== null && !(value === '' && value !== 0)),
+    Object.entries(data).filter(([, value]) => value !== undefined && value !== null && !(typeof value === 'string' && value === '')),
   );
 }
 
