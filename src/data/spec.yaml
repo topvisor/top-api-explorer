@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  title: Demo API
+  version: 1.0.0
+servers:
+  - url: https://jsonplaceholder.typicode.com
+paths:
+  /posts:
+    get:
+      operationId: listPosts
+      summary: Получить список постов
+      tags: [Posts]
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+    post:
+      operationId: createPost
+      summary: Создать пост
+      tags: [Posts]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
+                userId:
+                  type: integer
+              required: [title, body]
+  /posts/{id}:
+    get:
+      operationId: getPost
+      summary: Получить пост
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+  /users:
+    get:
+      operationId: listUsers
+      summary: Получить пользователей
+      tags: [Users]
+      parameters:
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['', Bret, Antonette, Samantha]
